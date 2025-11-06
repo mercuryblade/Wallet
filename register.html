@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Wallet - Registro</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <style>
+    body { padding: 20px; }
+    .container { max-width: 480px; margin: 0 auto; }
+    .hint { font-size: 0.9rem; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Crear cuenta</h2>
+
+    <form id="registerForm" novalidate>
+      <div class="form-group">
+        <label for="name">Nombre completo</label>
+        <input id="name" class="form-control" type="text" placeholder="Ej: Felipe Villegas" required>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input id="email" class="form-control" type="email" placeholder="correo@ejemplo.com" required>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Contraseña</label>
+        <input id="password" class="form-control" type="password" placeholder="Mínimo 8 caracteres" required>
+        <small class="hint">Usa al menos 8 caracteres, con letras y números para más seguridad.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="confirm">Confirmar contraseña</label>
+        <input id="confirm" class="form-control" type="password" placeholder="Repite la contraseña" required>
+      </div>
+
+      <div class="form-group">
+        <button class="btn btn-primary" type="submit">Crear cuenta</button>
+        <a href="login.html" class="btn btn-link">Ya tengo cuenta</a>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // validación simple de contraseña y email
+    function isStrongPassword(pw) {
+      if (!pw || pw.length < 8) return false;
+      // exigir al menos una letra y un número
+      return /[a-zA-Z]/.test(pw) && /\d/.test(pw);
+    }
+
+    function getUsers() {
+      try { return JSON.parse(localStorage.getItem('users') || '[]'); }
+      catch { return []; }
+    }
+
+    function saveUsers(u) {
+      localStorage.setItem('users', JSON.stringify(u));
+    }
+
+    // Inicializa almacenamiento de usuarios si no existe
+    if (localStorage.getItem('users') === null) localStorage.setItem('users', JSON.stringify([]));
+
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const password = document.getElementById('password').value;
+      const confirm = document.getElementById('confirm').value;
+
+      if (!name) { alert('Ingresa tu nombre.'); return; }
+      if (!email) { alert('Ingresa un email válido.'); return; }
+      if (!isStrongPassword(password)) { alert('Contraseña débil. Usa al menos 8 caracteres, incluye letras y números.'); return; }
+      if (password !== confirm) { alert('Las contraseñas no coinciden.'); return; }
+
+      const users = getUsers();
+      const exists = users.some(u => u.email === email);
+      if (exists) { alert('Ya existe una cuenta con ese correo. Inicia sesión o utiliza otro email.'); return; }
+
+      // Guardar usuario
+      const newUser = {
+        id: Date.now(),
+        name,
+        email,
+        password,   
+        createdAt: new Date().toISOString()
+      };
+      users.push(newUser);
+      saveUsers(users);
+
+      // marca usuario como logueado
+      localStorage.setItem('currentUser', JSON.stringify({ id: newUser.id, name: newUser.name, email: newUser.email }));
+
+      alert('Cuenta creada correctamente. Serás redirigido al Menú Principal.');
+      window.location.href = 'menu.html';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Wallet - Inicio</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <style>
+    body { padding: 24px; background:#f7f9fc; }
+    .container { max-width:520px; margin:40px auto; }
+    .hero { background:white; padding:24px; border-radius:8px; box-shadow:0 6px 18px rgba(31,45,61,0.06); }
+    .brand { font-weight:700; letter-spacing:0.2px; }
+    .actions { margin-top:18px; display:flex; gap:8px; flex-wrap:wrap; }
+    .small-note { color:#6b7280; font-size:0.9rem; margin-top:12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero text-center">
+      <div class="mb-3">
+        <h1 class="brand">Wallet</h1>
+        <p class="lead mb-0">Administra tu saldo, envía dinero y revisa movimientos.</p>
+      </div>
+
+      <div class="actions justify-content-center">
+        <a class="btn btn-primary" href="login.html">Iniciar sesión</a>
+        <a class="btn btn-outline-primary" href="register.html">Crear cuenta</a>
+        <a class="btn btn-secondary" href="menu.html">Entrar sin cuenta (demo)</a>
+      </div>
+      <div class="small-note">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Si ya hay usuario logueado, redirigir al menú automáticamente
+    try {
+      const current = localStorage.getItem('currentUser');
+      if (current) {
+        // pequeña demora para que el usuario vea la pantalla de bienvenida
+        setTimeout(() => { window.location.href = 'menu.html'; }, 600);
+      }
+    } catch(e) {}
+  </script>
+</body>
+</html>

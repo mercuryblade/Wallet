@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Wallet - Últimos Movimientos</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <style>
+    body { padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; }
+    .small-date { font-size: 0.85em; color: #666; }
+    .tx-type-deposito { color: #0a8a0a; }
+    .tx-type-retiro { color: #c41a1a; }
+    .tx-type-transferencia { color: #0a5aa8; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Últimos Movimientos</h2>
+    <ul id="txList" class="list-group mb-3"></ul>
+    <div class="d-flex justify-content-between">
+      <a href="menu.html" class="btn btn-secondary">Volver al Menú Principal</a>
+      <button id="clearTx" class="btn btn-outline-danger">Borrar historial</button>
+    </div>
+  </div>
+
+  <script>
+    // Asegurar existencia de clave
+    if (localStorage.getItem('transactions') === null) localStorage.setItem('transactions', JSON.stringify([]));
+
+    const txList = document.getElementById('txList');
+
+    function fmtDate(iso) {
+      const d = new Date(iso);
+      return d.toLocaleString();
+    }
+
+    function renderTxs() {
+      txList.innerHTML = '';
+      const txs = JSON.parse(localStorage.getItem('transactions') || '[]');
+
+      if (!txs || txs.length === 0) {
+        const li = document.createElement('li');
+        li.className = 'list-group-item';
+        li.textContent = 'No hay movimientos registrados.';
+        txList.appendChild(li);
+        return;
+      }
+
+      txs.forEach(t => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item';
+
+        const label = (t.type === 'deposito') ? 'Depósito' : (t.type === 'retiro') ? 'Retiro' : 'Transferencia';
+        const sign = (t.type === 'deposito') ? '+' : '-';
+        const cls = (t.type === 'deposito') ? 'tx-type-deposito' : (t.type === 'retiro') ? 'tx-type-retiro' : 'tx-type-transferencia';
+
+        li.innerHTML = `
+          <div><strong class="${cls}">${label} ${sign}$${Number(t.amount).toLocaleString()}</strong></div>
+          <div class="small-date">${fmtDate(t.date)} — ${t.detail || ''}</div>
+        `;
+        txList.appendChild(li);
+      });
+    }
+
+    // Limpiar historial
+    document.getElementById('clearTx').addEventListener('click', function() {
+      if (!confirm('¿Deseas borrar todo el historial de transacciones?')) return;
+      localStorage.setItem('transactions', JSON.stringify([]));
+      renderTxs();
+      alert('Historial borrado.');
+    });
+
+    renderTxs();
+  </script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Wallet - Retirar</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <style>
+    body { padding: 20px; }
+    .container { max-width: 400px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Retirar Dinero</h2>
+    <form id="withdrawForm">
+      <div class="form-group">
+        <label for="withdrawAmount">Monto a retirar</label>
+        <input type="number" class="form-control" id="withdrawAmount" placeholder="Ingresar Monto" min="1" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Realizar Retiro</button>
+    </form>
+    <a href="menu.html" class="btn btn-secondary mt-3">Volver al Menú Principal</a>
+  </div>
+
+  <script>
+    // Inicializar keys si no existen
+    if (localStorage.getItem('saldo') === null) localStorage.setItem('saldo', '0');
+    if (localStorage.getItem('transactions') === null) localStorage.setItem('transactions', JSON.stringify([]));
+
+    function addTransaction(type, amount, detail) {
+      const txs = JSON.parse(localStorage.getItem('transactions') || '[]');
+      txs.unshift({ date: new Date().toISOString(), type, amount: Number(amount), detail });
+      localStorage.setItem('transactions', JSON.stringify(txs));
+    }
+
+    document.getElementById("withdrawForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const input = document.getElementById("withdrawAmount");
+      const monto = parseFloat(input.value);
+
+      if (isNaN(monto) || monto <= 0) {
+        alert("Ingresa un monto válido mayor a 0");
+        return;
+      }
+
+      let saldoActual = parseFloat(localStorage.getItem("saldo") || "0");
+      if (isNaN(saldoActual)) saldoActual = 0;
+
+      if (monto > saldoActual) {
+        alert("No tienes suficiente saldo para realizar este retiro.");
+        return;
+      }
+
+      saldoActual -= monto;
+      localStorage.setItem("saldo", String(saldoActual));
+
+      addTransaction('retiro', monto, 'Retiro de cuenta');
+      alert(`Retiro exitoso. Nuevo saldo: $${saldoActual.toLocaleString()}`);
+      input.value = "";
+    });
+  </script>
+</body>
+</html>

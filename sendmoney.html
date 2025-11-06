@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Billetera - Enviar Dinero</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <style>
+    body { padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; }
+    .button-group { display: flex; gap: 10px; margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Enviar Dinero</h2>
+    <form id="searchForm">
+      <div class="form-group">
+        <label for="searchContact">Buscar en la agenda de transferencias:</label>
+        <input type="text" class="form-control" id="searchContact" placeholder="Buscar Contacto">
+      </div>
+
+      <div class="button-group">
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addContactModal">Agregar nuevo contacto</button>
+        <button type="submit" class="btn btn-primary">Buscar</button>
+      </div>
+
+      <h3>Contactos</h3>
+      <ul id="contactList" class="list-group mb-3"></ul>
+
+      <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#sendMoneyModal">Enviar dinero</button>
+    </form>
+
+    <a href="menu.html" class="btn btn-secondary mt-3">Volver al Menú Principal</a>
+  </div>
+
+  <!-- Modales (agregar, resultados, enviar) -->
+  <div class="modal fade" id="addContactModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document"><div class="modal-content">
+      <form id="addContactForm">
+        <div class="modal-header"><h5 class="modal-title">Agregar Nuevo Contacto</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div>
+        <div class="modal-body">
+          <div class="form-group"><label for="contactName">Nombre</label><input type="text" class="form-control" id="contactName" required></div>
+          <div class="form-group"><label for="contactCBU">N° de cuenta</label><input type="text" class="form-control" id="contactCBU" required></div>
+          <div class="form-group"><label for="contactAlias">Alias</label><input type="text" class="form-control" id="contactAlias" required></div>
+          <div class="form-group">
+            <label for="contactSelect">Selecciona el banco</label>
+            <select class="form-control" id="contactSelect" required>
+              <option value="">Elegir...</option>
+              <option>BancoEstado</option>
+              <option>Banco de Chile</option>
+              <option>BCI</option>
+              <option>Santander</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary">Agregar</button></div>
+      </form>
+    </div></div>
+  </div>
+
+  <div class="modal fade" id="searchResultsModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Resultados de búsqueda</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="searchResultsSelect">Contactos encontrados</label>
+          <select class="form-control" id="searchResultsSelect"><option value="">Elegir...</option></select>
+        </div>
+        <small id="searchResultsMsg" class="text-muted"></small>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button></div>
+    </div></div>
+  </div>
+
+  <div class="modal fade" id="sendMoneyModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document"><div class="modal-content">
+      <form id="sendMoneyForm">
+        <div class="modal-header"><h5 class="modal-title">Enviar Dinero</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="recipientSelect">Selecciona el contacto</label>
+            <select class="form-control" id="recipientSelect" required><option value="">Elegir...</option></select>
+          </div>
+          <div class="form-group"><label for="amountToSend">Monto a enviar:</label><input type="number" class="form-control" id="amountToSend" min="1" required></div>
+          <div class="form-group"><small id="currentSaldo" class="text-muted"></small></div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary">Confirmar envío</button></div>
+      </form>
+    </div></div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+  <script>
+    // Inicializar almacenamiento
+    if (localStorage.getItem('saldo') === null) localStorage.setItem('saldo', '0');
+    if (localStorage.getItem('contacts') === null) {
+      const defaults = [
+        { name: "Camila Rojas", cbu: "00123456789", alias: "camila.rojas", bank: "BancoEstado" },
+        { name: "Felipe González", cbu: "00987654321", alias: "felipe.gonzalez", bank: "Banco de Chile" },
+        { name: "María Torres", cbu: "00543219876", alias: "maria.torres", bank: "BCI" }
+      ];
+      localStorage.setItem('contacts', JSON.stringify(defaults));
+    }
+    if (localStorage.getItem('transactions') === null) localStorage.setItem('transactions', JSON.stringify([]));
+
+    function getContacts() {
+      return JSON.parse(localStorage.getItem('contacts') || '[]');
+    }
+    function saveContacts(list) {
+      localStorage.setItem('contacts', JSON.stringify(list));
+    }
+    function addTransaction(type, amount, detail) {
+      const txs = JSON.parse(localStorage.getItem('transactions') || '[]');
+      txs.unshift({ date: new Date().toISOString(), type, amount: Number(amount), detail });
+      localStorage.setItem('transactions', JSON.stringify(txs));
+    }
+
+    // Render contactos y selects
+    function renderContacts() {
+      const contacts = getContacts();
+      const ul = document.getElementById('contactList');
+      ul.innerHTML = '';
+      contacts.forEach(c => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item';
+        li.innerHTML = `<div class="contact-info"><strong>${c.name}</strong><br><span class="contact-details">N° de cuenta: ${c.cbu}, Alias: ${c.alias}, Banco: ${c.bank}</span></div>`;
+        ul.appendChild(li);
+      });
+
+      const recipientSelect = document.getElementById('recipientSelect');
+      const searchResultsSelect = document.getElementById('searchResultsSelect');
+      recipientSelect.innerHTML = '<option value="">Elegir...</option>';
+      searchResultsSelect.innerHTML = '<option value="">Elegir...</option>';
+      contacts.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.alias || c.name;
+        opt.textContent = `${c.name} — ${c.alias} — ${c.bank}`;
+        recipientSelect.appendChild(opt);
+        searchResultsSelect.appendChild(opt.cloneNode(true));
+      });
+
+      const saldo = parseFloat(localStorage.getItem('saldo') || '0');
+      document.getElementById('currentSaldo').textContent = `Saldo actual: $${(isNaN(saldo) ? 0 : saldo).toLocaleString()}`;
+    }
+    renderContacts();
+
+    // Agregar contacto persistente
+    document.getElementById("addContactForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const name = document.getElementById("contactName").value.trim();
+      const cbu = document.getElementById("contactCBU").value.trim();
+      const alias = document.getElementById("contactAlias").value.trim();
+      const bank = document.getElementById("contactSelect").value;
+
+      if (!name || !cbu || !alias || !bank) return;
+
+      const contacts = getContacts();
+      contacts.push({ name, cbu, alias, bank });
+      saveContacts(contacts);
+
+      $('#addContactModal').modal('hide');
+      document.getElementById("addContactForm").reset();
+      renderContacts();
+    });
+
+    // Buscar contactos
+    document.getElementById("searchForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const term = document.getElementById("searchContact").value.trim().toLowerCase();
+      const contacts = getContacts();
+      const filtered = term ? contacts.filter(c => c.name.toLowerCase().includes(term) || c.alias.toLowerCase().includes(term)) : contacts;
+
+      const select = document.getElementById("searchResultsSelect");
+      const msg = document.getElementById("searchResultsMsg");
+      select.innerHTML = '<option value="">Elegir...</option>';
+
+      if (filtered.length === 0) {
+        select.disabled = true;
+        msg.textContent = "No hay coincidencias.";
+      } else {
+        select.disabled = false;
+        filtered.forEach(c => {
+          const option = document.createElement('option');
+          option.value = c.alias || c.name;
+          option.textContent = `${c.name} — N° de cuenta: ${c.cbu} — Alias: ${c.alias} — ${c.bank}`;
+          select.appendChild(option);
+        });
+        msg.textContent = `Se encontraron ${filtered.length} contacto(s).`;
+      }
+      $('#searchResultsModal').modal('show');
+    });
+
+    // Enviar dinero con control de saldo y registro
+    document.getElementById("sendMoneyForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const recipient = document.getElementById("recipientSelect").value;
+      const amount = parseFloat(document.getElementById("amountToSend").value);
+      let saldo = parseFloat(localStorage.getItem("saldo") || "0");
+      if (isNaN(saldo)) saldo = 0;
+
+      if (!recipient) { alert("Selecciona un contacto."); return; }
+      if (isNaN(amount) || amount <= 0) { alert("Ingresa un monto válido mayor a 0."); return; }
+      if (amount > saldo) { alert("No tienes suficiente saldo para realizar esta transferencia."); return; }
+
+      saldo -= amount;
+      localStorage.setItem("saldo", String(saldo));
+      addTransaction('transferencia', amount, `Enviado a ${recipient}`);
+      alert(`Has enviado $${amount.toLocaleString()} a ${recipient}. Saldo restante: $${saldo.toLocaleString()}`);
+      $('#sendMoneyModal').modal('hide');
+      document.getElementById("sendMoneyForm").reset();
+      renderContacts();
+    });
+
+    // Actualizar saldo al abrir modal enviar
+    $('#sendMoneyModal').on('show.bs.modal', function () { renderContacts(); });
+  </script>
+</body>
+</html>
